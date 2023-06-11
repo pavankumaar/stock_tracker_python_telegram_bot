@@ -11,7 +11,6 @@ from telegram.ext.callbackcontext import CallbackContext
 from telegram.ext.commandhandler import CommandHandler
 from telegram.ext.messagehandler import MessageHandler
 from telegram.ext.filters import Filters
-from Stocktracking import TrackStock
 
 updater = Updater("6199264921:AAEFgyo3ro6ceg0zslLvSysI62ObONm2vQg",
 				use_context=True)
@@ -20,12 +19,12 @@ stock_url = ""
 isAppRunning = True
 
 def initialize_driver():
+	print("Initializing driver....")
 	options = webdriver.ChromeOptions()
 	options.add_experimental_option('excludeSwitches', ['enable-logging'])
 	options.add_argument('--disable-notifications')
 	path = 'C:/Users/pavan/Downloads/chromedriver_win32/chromedriver.exe'
 	driver = webdriver.Chrome(path,options = options)
-	# update.message.reply_text("Intializing web driver...");
 	return driver
 
 def start_scrapper(driver, update):
@@ -53,12 +52,14 @@ def start_tracking(update: Update, context: CallbackContext):
 	update.message.reply_text("Please provide valid stock url from Trading view.")
 
 def change_tracking(update: Update, context: CallbackContext):
+	isAppRunning = True
 	stock_url = update.message.text;
 	update.message.reply_text("Please provide valid stock url from Trading view.");
 
 def stop_tracking(update: Update, context: CallbackContext):
 	isAppRunning = False
-	update.message.reply_text("Tracking stopped. Thannk you! See you again.")
+	print("Tracking stopped..")
+	update.message.reply_text("Tracking stopped. Thannk you! See you again. You can start tracking by clicking /start_tracking")
 
 def set_stock_url(update: Update, context: CallbackContext):
 	stock_url = update.message.text;
@@ -66,7 +67,8 @@ def set_stock_url(update: Update, context: CallbackContext):
 	driver = initialize_driver();
 	driver.get(stock_url)
 	count = 0
-	while True:
+	print("Tracking started..")
+	while isAppRunning:
 		WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div[6]/div/div[1]/div[1]/div[1]/div[2]/div[2]/div/div[2]/div[2]/span[1]"))).click()
 		page_source = driver.page_source
 		soup = BeautifulSoup(page_source, 'html.parser')
@@ -88,3 +90,4 @@ updater.dispatcher.add_handler(CommandHandler('change_tracking', change_tracking
 updater.dispatcher.add_handler(MessageHandler(Filters.text, set_stock_url))
 
 updater.start_polling()
+print("App started..")
