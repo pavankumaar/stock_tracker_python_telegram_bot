@@ -7,13 +7,12 @@ from bs4 import BeautifulSoup
 import time
 from telegram.ext.updater import Updater
 from telegram.update import Update
+from telegram.ext.dispatcher import run_async
 from telegram.ext.callbackcontext import CallbackContext
 from telegram.ext.commandhandler import CommandHandler
 from telegram.ext.messagehandler import MessageHandler
 from telegram.ext.filters import Filters
 
-updater = Updater("6199264921:AAEFgyo3ro6ceg0zslLvSysI62ObONm2vQg",
-				use_context=True)
 
 stock_url = ""
 isAppRunning = True
@@ -29,54 +28,48 @@ def initialize_driver():
 	driver = webdriver.Chrome(path,options = options)
 	return driver
 
-def start_scrapper(driver, update):
-	driver.get(stock_url)
-	WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div[6]/div/div[1]/div[1]/div[1]/div[2]/div[2]/div/div[2]/div[2]/span[1]"))).click()
-	count = 0
-	while True:
-		page_source = driver.page_source
-		soup = BeautifulSoup(page_source, 'html.parser')
 
-		price = soup.find(class_ = "priceWrapper-qWcO4bp9").get_text()
-		update.message.reply_text("Current price {}".format(price));
-		time.sleep(1)
-		
-		count = count + 1
-		if count > 10:
-			start_scrapper(driver, update);
-
-
+@run_async
 def start(update: Update, context: CallbackContext):
-	update.message.reply_text("Hello, Welcome to the Stock tracking bot. Please click on /start_tracking for starting the tracker")
+	context.bot.send_message(chat_id=update.effective_chat.id, text="Hello, Welcome to the Stock tracking bot. Please click on /start_tracking for starting the tracker")
 
+@run_async
 def start_tracking(update: Update, context: CallbackContext):
+	global isAppRunning
 	isAppRunning = True
-	update.message.reply_text("Please provide valid stock url from Trading view.")
+	context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide valid stock url from Trading view.")
 
+@run_async
 def change_tracking(update: Update, context: CallbackContext):
+	global isAppRunning, stock_url
 	isAppRunning = True
 	stock_url = update.message.text;
-	update.message.reply_text("Please provide valid stock url from Trading view.");
+	context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide valid stock url from Trading view.");
 
+@run_async
 def stop_tracking(update: Update, context: CallbackContext):
+	global isAppRunning
 	isAppRunning = False
 	print("Tracking stopped..")
-	update.message.reply_text("Tracking stopped. Thannk you! See you again. You can start tracking by clicking /start_tracking")
+	context.bot.send_message(chat_id=update.effective_chat.id, text="Tracking stopped. Thannk you! See you again. You can start tracking by clicking /start_tracking")
 
+@run_async
 def set_stock_url(update: Update, context: CallbackContext):
+	global stock_url
 	stock_url = update.message.text;
-	update.message.reply_text("Tracking started. Stock url is {}".format(stock_url));
+	context.bot.send_message(chat_id=update.effective_chat.id, text="Tracking started. Stock url is {}".format(stock_url));
 	driver = initialize_driver();
 	driver.get(stock_url)
 	count = 0
 	print("Tracking started..")
+	global isAppRunning
 	while isAppRunning:
 		WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div[6]/div/div[1]/div[1]/div[1]/div[2]/div[2]/div/div[2]/div[2]/span[1]"))).click()
 		page_source = driver.page_source
 		soup = BeautifulSoup(page_source, 'html.parser')
 
 		price = soup.find(class_ = "priceWrapper-qWcO4bp9").get_text()
-		update.message.reply_text("Current price {}".format(price));
+		context.bot.send_message(chat_id=update.effective_chat.id, text="Current price {}".format(price));
 		time.sleep(1)
 		
 		count = count + 1
@@ -85,11 +78,21 @@ def set_stock_url(update: Update, context: CallbackContext):
 			driver.refresh()
 
 
-updater.dispatcher.add_handler(CommandHandler('start', start))
-updater.dispatcher.add_handler(CommandHandler('start_tracking', start_tracking))
-updater.dispatcher.add_handler(CommandHandler('stop_tracking', stop_tracking))
-updater.dispatcher.add_handler(CommandHandler('change_tracking', change_tracking))
-updater.dispatcher.add_handler(MessageHandler(Filters.text, set_stock_url))
 
-updater.start_polling()
-print("App started..")
+
+def main():
+	updater = Updater("6199264921:AAEFgyo3ro6ceg0zslLvSysI62ObONm2vQg",use_context=True, workers=100)
+	updater.dispatcher.add_handler(CommandHandler('start', start))
+	updater.dispatcher.add_handler(CommandHandler('start_tracking', start_tracking))
+	updater.dispatcher.add_handler(CommandHandler('stop_tracking', stop_tracking))
+	updater.dispatcher.add_handler(CommandHandler('change_tracking', change_tracking))
+	updater.dispatcher.add_handler(MessageHandler(Filters.text, set_stock_url))
+
+	updater.start_polling()
+	print("App started..")
+
+	updater.idle()
+
+
+if __name__ == '__main__':
+    main()
