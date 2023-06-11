@@ -55,27 +55,31 @@ def stop_tracking(update: Update, context: CallbackContext):
 
 @run_async
 def set_stock_url(update: Update, context: CallbackContext):
-	global stock_url
+	global stock_url, isAppRunning
+	isAppRunning = True
 	stock_url = update.message.text;
 	context.bot.send_message(chat_id=update.effective_chat.id, text="Tracking started. Stock url is {}".format(stock_url));
 	driver = initialize_driver();
 	driver.get(stock_url)
 	count = 0
-	print("Tracking started..")
-	global isAppRunning
-	while isAppRunning:
-		WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div[6]/div/div[1]/div[1]/div[1]/div[2]/div[2]/div/div[2]/div[2]/span[1]"))).click()
-		page_source = driver.page_source
-		soup = BeautifulSoup(page_source, 'html.parser')
+	context.bot.send_message(chat_id=update.effective_chat.id, text="Tracking started..{}".format(isAppRunning))
+	try:
+		while isAppRunning:
+			WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div[6]/div/div[1]/div[1]/div[1]/div[2]/div[2]/div/div[2]/div[2]/span[1]"))).click()
+			page_source = driver.page_source
+			soup = BeautifulSoup(page_source, 'html.parser')
 
-		price = soup.find(class_ = "priceWrapper-qWcO4bp9").get_text()
-		context.bot.send_message(chat_id=update.effective_chat.id, text="Current price {}".format(price));
-		time.sleep(1)
-		
-		count = count + 1
-		if count > 10:
-			count = 0
-			driver.refresh()
+			price = soup.find(class_ = "priceWrapper-qWcO4bp9").get_text()
+			context.bot.send_message(chat_id=update.effective_chat.id, text="Current price {}".format(price));
+			time.sleep(1)
+			
+			count = count + 1
+			if count > 10:
+				count = 0
+				driver.refresh()
+	except Exception as e:
+		context.bot.send_message(chat_id=update.effective_chat.id, text="Error occured {}".format(e));
+
 
 
 
