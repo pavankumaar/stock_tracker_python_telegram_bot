@@ -17,13 +17,15 @@ updater = Updater("6199264921:AAEFgyo3ro6ceg0zslLvSysI62ObONm2vQg",
 
 stock_url = ""
 isAppRunning = True
+localpath = 'C:/Users/pavan/Downloads/chromedriver_win32/chromedriver.exe'
 
 def initialize_driver():
 	print("Initializing driver....")
 	options = webdriver.ChromeOptions()
 	options.add_experimental_option('excludeSwitches', ['enable-logging'])
 	options.add_argument('--disable-notifications')
-	path = 'C:/Users/pavan/Downloads/chromedriver_win32/chromedriver.exe'
+	options.add_argument('--headless')
+	path = '/home/ubuntu/python/stock_tracker_python_telegram_bot/lib/chromedriver'
 	driver = webdriver.Chrome(path,options = options)
 	return driver
 
