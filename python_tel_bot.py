@@ -59,18 +59,32 @@ def set_stock_url(update: Update, context: CallbackContext):
 	isAppRunning = True
 	stock_url = update.message.text;
 	context.bot.send_message(chat_id=update.effective_chat.id, text="Tracking started. Stock url is {}".format(stock_url));
-	driver = initialize_driver();
-	driver.get(stock_url)
+
 	count = 0
-	context.bot.send_message(chat_id=update.effective_chat.id, text="Tracking started..{}".format(isAppRunning))
+	current_price = "" 
 	try:
+		driver = initialize_driver();
+		driver.get(stock_url)
 		while isAppRunning:
 			WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div[6]/div/div[1]/div[1]/div[1]/div[2]/div[2]/div/div[2]/div[2]/span[1]"))).click()
 			page_source = driver.page_source
 			soup = BeautifulSoup(page_source, 'html.parser')
 
-			price = soup.find(class_ = "priceWrapper-qWcO4bp9").get_text()
-			context.bot.send_message(chat_id=update.effective_chat.id, text="Current price {}".format(price));
+			price = soup.find(class_ = "price-qWcO4bp9").get_text()
+			title = soup.find(class_ = "title-ZJX9Rmzv").get_text()
+			detail = soup.find(class_ = "text-eFCYpbUa").get_text()
+			curr = soup.find(class_ = "currency-qWcO4bp9").get_text()
+			change = soup.find(class_ = "change-SNvPvlJ3").get_text()
+			if "−" in change:
+				status = "🔴"
+			else:
+				status = "🟢"
+
+			message = "{}\n{}\n{} {}\n{} {}".format(title,detail,price,curr,change,status)
+
+			if price != current_price:
+				current_price = price
+				context.bot.send_message(chat_id=update.effective_chat.id, text=message);
 			time.sleep(1)
 			
 			count = count + 1
@@ -85,7 +99,7 @@ def set_stock_url(update: Update, context: CallbackContext):
 
 
 def main():
-	updater = Updater("6199264921:AAEFgyo3ro6ceg0zslLvSysI62ObONm2vQg",use_context=True, workers=100)
+	updater = Updater("6228304338:AAF_Jwor2BQbIYUvPNo7ii55V3QU-V28lBE",use_context=True, workers=100)
 	updater.dispatcher.add_handler(CommandHandler('start', start))
 	updater.dispatcher.add_handler(CommandHandler('start_tracking', start_tracking))
 	updater.dispatcher.add_handler(CommandHandler('stop_tracking', stop_tracking))
